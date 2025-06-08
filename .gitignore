@@ -37,6 +37,9 @@ CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
 Makefile
+.o
+texteditor
+a.out
 
 # Qt Creator
 *.pro.user
