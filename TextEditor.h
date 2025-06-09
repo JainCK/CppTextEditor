@@ -12,6 +12,7 @@ class TextEditor {
         vector<string> lines; // stores lines of text in a dynamic array
         string currentFileName;
         bool isModified;
+       
     public:
 
     TextEditor();
@@ -40,6 +41,8 @@ class TextEditor {
 
     // validation 
     bool isValidLineNumber(int lineNumber) const;
+
+    
 };
 
 #endif

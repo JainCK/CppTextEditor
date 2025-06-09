@@ -1,4 +1,5 @@
 #include "TextEditor.h"
+#include "UI.h"
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -6,20 +7,7 @@
 using namespace std;
 
 void showHelp() {
-    cout << "\n=== Text Editor Commands ===" << endl;
-    cout << "load <filename>     - Load a file" << endl;
-    cout << "save               - Save current file" << endl;
-    cout << "saveas <filename>  - Save as new file" << endl;
-    cout << "show               - Display all content" << endl;
-    cout << "line <number>      - Display specific line" << endl;
-    cout << "insert <pos> <text> - Insert line at position" << endl;
-    cout << "delete <number>    - Delete line" << endl;
-    cout << "modify <number>    - Modify existing line" << endl;
-    cout << "stats              - Show editor statistics" << endl;
-    cout << "clear              - Clear all content" << endl;
-    cout << "help               - Show this help" << endl;
-    cout << "quit               - Exit editor" << endl;
-    cout << "===========================" << endl;
+    UI::showHelpMenu();
 }
 
 string getRestOFLine(const string& input, const string& command) {
@@ -48,13 +36,12 @@ void parseAndExecuteCommand(const string& input, TextEditor& editor){
 
     if(command == "help" || command == "h") {
         showHelp();
-
     } 
     else if (command == "load") {
         string filename;
         iss >> filename;
         if(filename.empty()){
-            cout << "Usage: load <filename>" << endl;
+            UI::showError("Usage: load <filename>");
         } else {
             editor.loadFile(filename);
         }
@@ -66,7 +53,7 @@ void parseAndExecuteCommand(const string& input, TextEditor& editor){
         string filename;
         iss >> filename;
         if(filename.empty()){
-            cout << "Usage: saveas <filename>" << endl;
+            UI::showError("Usage: saveas <filename>");
         } else {
             editor.saveFileAs(filename);
         }
@@ -79,7 +66,7 @@ void parseAndExecuteCommand(const string& input, TextEditor& editor){
         if (iss >> lineNumber) {
             editor.displayLine(lineNumber);
         } else {
-            cout << "Usage: line <number>" << endl;
+            UI::showError("Usage: line <number>");
         }
     }
     else if (command == "insert") {
@@ -97,9 +84,8 @@ void parseAndExecuteCommand(const string& input, TextEditor& editor){
             }
 
             editor.insertLine(position, content);
-
         } else {
-            cout << "Usage: insert <pos> <text>" << endl;
+            UI::showError("Usage: insert <pos> <text>");
         }
     }
     else if (command == "delete" || command == "del") {
@@ -107,44 +93,46 @@ void parseAndExecuteCommand(const string& input, TextEditor& editor){
         if(iss >> lineNumber) {
             editor.deleteLine(lineNumber);
         } else {
-            cout << "Usage: delete <number>" << endl;
+            UI::showError("Usage: delete <number>");
         }
     }
     else if (command == "modify" || command == "mod") {
         int lineNumber;
         if (iss >> lineNumber) {
-            cout << "Enter new content for line " << lineNumber << ": ";
+            cout << UI::Colors::BRIGHT_YELLOW << "Enter new content for line " << lineNumber << ": " << UI::Colors::RESET;
             string newContent;
             getline(cin, newContent);
             editor.ModifyLine(lineNumber, newContent);
         } else {
-            cout << "Usage: modify <line_number>" << endl;
+            UI::showError("Usage: modify <line_number>");
         }
     }
     else if (command == "stats" || command == "info") {
         editor.displayStats();
     }
     else if (command == "clear") {
-        editor.clearBuffer();
+        if(UI::getYesNoInput("Are you sure you want to clear all content?")) {
+            editor.clearBuffer();
+        }
+    }
+    else if (command == "menu") {
+        UI::showMainMenu();
     }
     else if (command == "quit" || command == "exit" || command == "q") {
         if (editor.hasUnsavedChanges()) {
-            cout << "Warning: You have unsaved changes!" << endl;
-            cout << "Are you sure you want to quit? (y/n): ";
-            string confirm;
-            getline(cin, confirm);
-            if (confirm == "y" || confirm == "Y" || confirm == "yes") {
-                cout << "Goodbye!" << endl;
+            UI::showWarning("You have unsaved changes!");
+            if(UI::getYesNoInput("Are you sure you want to quit?")) {
+                UI::showGoodbyeScreen();
                 exit(0);
             }
         } else {
-            cout << "Goodbye!" << endl;
+            UI::showGoodbyeScreen();
             exit(0);
         }
     }
     else {
-        cout << "Unknown command: " << command << endl;
-        cout << "Type 'help' for available commands." << endl;
+        UI::showError("Unknown command: " + command);
+        UI::showInfo("Type 'help' for available commands");
     }
 }
 
@@ -152,11 +140,12 @@ int main() {
     TextEditor editor;
     string input;
 
-    cout << "=== Welcome to this simple text editor! ===" << endl;
-    cout << "Type 'help' for available commands." << endl;
+    // Show enhanced welcome screen
+    UI::showWelcomeScreen();
+    UI::showMainMenu();
 
     while(true) {
-        cout << "\nEditor> ";
+        UI::showCommandPrompt(editor.getCurrentFileName(), editor.hasUnsavedChanges());
         getline(cin, input);
 
         parseAndExecuteCommand(input, editor);

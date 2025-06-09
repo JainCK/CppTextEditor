@@ -1,4 +1,5 @@
 #include "TextEditor.h"
+#include "UI.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -11,10 +12,11 @@ TextEditor::TextEditor() : isModified(false) {
 }
 
 bool TextEditor::loadFile(const string& filename) {
+    UI::loadingAnimation("Loading file: ", 2000);
     ifstream file(filename);
 
     if(!file.is_open()){
-        cerr << "Error: Could not open file " << filename << endl;
+        UI::showError("Could not open file '" + filename + "'");
         return false;
     }
 
@@ -30,14 +32,14 @@ bool TextEditor::loadFile(const string& filename) {
     currentFileName = filename;
     isModified = false;
 
-    cout << "File loaded successfully: " << filename << " " <<lines.size() << " lines read." << endl; 
+    UI::showSuccess("File '" + filename + "' loaded successfully! " + to_string(lines.size()) + " lines read.");
 
     return true;
 }
 
 bool TextEditor::saveFile() {
     if(currentFileName.empty()) {
-        cerr << "Error: No file loaded. Please use 'saveas' to specify a filename." << endl;
+        UI::showError("No filename specified. Use 'saveas' command.");
         return false;
     }
 
@@ -47,9 +49,11 @@ bool TextEditor::saveFile() {
 }
 
 bool TextEditor::saveFileAs(const string& filename) {
+    UI::loadingAnimation("Saving file", 800);
     ofstream file(filename);
+
     if(!file.is_open()) {
-        cerr << "Error: Could not open file " << filename << " for writing." << endl;
+        UI::showError("Could not create/write to file '" + filename + "'");
         return false;
     }
 
@@ -66,46 +70,39 @@ bool TextEditor::saveFileAs(const string& filename) {
     currentFileName = filename;
     isModified = false;
 
-    cout << "File saved successfully: " << filename << " "<< lines.size() << " lines written." << endl;
+    UI::showSuccess("File saved as '" + filename + "'! " + to_string(lines.size()) + " lines written.");
 
     return true;
 }
 
 void TextEditor::displayContent() const {
     if (lines.empty()) {
-        cout << "[Empty file]" << endl;
+        UI::showBox("📝 Empty file - start typing to add content!", UI::Colors::YELLOW);
         return;
     }
 
-    cout <<"\n======Content of " << currentFileName << "======\n";
-    for(size_t i = 0; i < lines.size(); i++) {
-        cout << setw(4) << (i+1) << ": " << lines[i] << endl;
-    }
-
-    cout << "========================\n";
+    UI::showLineNumbers(lines, 1);
 }
 
 void TextEditor::displayLine(int lineNumber) const {
     if(!isValidLineNumber(lineNumber)) {
-        cerr << "Error: Invalid line number " << lineNumber << endl;
+        UI::showError("Invalid line number '" + to_string(lineNumber)+ "'");
+        
         return;
     }
 
     int index = lineNumber - 1;
-    cout << "Line " << lineNumber << ": " << lines[index] << endl;
+    cout << UI::Colors::BRIGHT_BLUE << "Line " << lineNumber << ": " 
+         << UI::Colors::BRIGHT_WHITE << lines[index] << UI::Colors::RESET << endl;
 }
 
 void TextEditor::displayStats() const {
-    cout << "\n======Editor Statistics======\n" << endl;
-    cout << "current File: " << (currentFileName.empty() ? "[New file]" : currentFileName) << endl;
-    cout << "Total lines: " << lines.size() << endl;
-    cout << "Nodified: " << (isModified ? "Yes" : "No") << endl;
-    cout << "=============================\n" << endl;
+    UI::showFileStats(currentFileName, lines.size(), isModified);
 }
 
 void TextEditor::insertLine(int position, const string& content) {
     if(position < 1 || position > static_cast<int>(lines.size()) + 1) {
-        cerr << "Error: Invalid position " << position << ". Valid range: 1-" << (lines.size() + 1) << endl;
+        UI::showError("Invalid position " + to_string(position) + ". Valid range: 1-" + to_string(lines.size() + 1));
         return;
     }
 
@@ -114,37 +111,37 @@ void TextEditor::insertLine(int position, const string& content) {
     lines.insert(lines.begin() + index, content);
     isModified = true;
 
-    cout << "Line inserted at position " << position << endl;
+    UI::showSuccess("Line inserted at position " + to_string(position));
 }
 
 void TextEditor::deleteLine(int lineNumber) {
     if(isValidLineNumber(lineNumber)) {
-        cerr << "Error: Invalid line number " << lineNumber << endl;
+        UI::showError("Invalid line number " + to_string(lineNumber));
         return;
     }
 
     int index = lineNumber - 1; // Convert to zero-based index
 
-    cout << "Deleting line " << lineNumber << ": " << lines[index] << endl;
+    UI::showInfo("Deleting line " + to_string(lineNumber) + ": " + lines[index]);
     lines.erase(lines.begin() + index);
 
     isModified = true;
-    cout << "Line " << lineNumber << " deleted successfully." << endl;
+    UI::showSuccess("Line " + to_string(lineNumber) + " deleted successfully.");
 }
 
 void TextEditor::ModifyLine(int lineNumber, const string& newContent) {
     if(!isValidLineNumber(lineNumber)) {
-        cerr << "Error: Invalid line number " << lineNumber << endl;
+        UI::showError("Invalid line number " + to_string(lineNumber));
         return;
     }
 
     int index = lineNumber - 1; // Convert to zero-based index
 
-    cout << "Modifying line " << lineNumber << ": " << lines[index] << endl;
+    UI::showInfo("Modifying line " + to_string(lineNumber) + ": " + lines[index]);
     lines[index] = newContent;
 
     isModified = true;
-    cout << "Line " << lineNumber << " modified successfully." << endl;
+    UI::showSuccess("Line " + to_string(lineNumber) + " modified successfully.");
 }
 
 int TextEditor::getTotalLines() const {
@@ -163,9 +160,11 @@ void TextEditor::clearBuffer() {
     lines.clear();
     currentFileName = "";
     isModified = false;
-    cout << "Buffer cleared." << endl;
+    UI::showSuccess("Buffer cleared successfully.");
 }
 
 bool TextEditor::isValidLineNumber(int lineNumber) const {
     return lineNumber > 0 && lineNumber <= static_cast<int>(lines.size());
 }
+
+
